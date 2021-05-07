@@ -5,7 +5,6 @@ import (
 )
 
 func main() {
-	app := &app.App{}
-	app.Initialize()
-	app.Run(":8085")
+	radApp := &app.App{}
+	radApp.InitializeAndRun(":8085")
 }

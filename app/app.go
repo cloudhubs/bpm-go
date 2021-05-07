@@ -14,10 +14,13 @@ type App struct {
 	Router *mux.Router
 }
 
-// Initialize initializes the app with predefined configuration
-func (a *App) Initialize() {
+// InitializeAndRun initializes and run the app on it's router
+func (a *App) InitializeAndRun(host string) {
 	a.Router = mux.NewRouter()
 	a.setRouters()
+
+	log.Println("Starting server", host)
+	log.Fatal(http.ListenAndServe(host, a.Router))
 }
 
 // setRouters sets the all required routers
@@ -43,12 +46,6 @@ func (a *App) Put(path string, f func(w http.ResponseWriter, r *http.Request)) {
 // Delete wraps the router for DELETE method
 func (a *App) Delete(path string, f func(w http.ResponseWriter, r *http.Request)) {
 	a.Router.HandleFunc(path, f).Methods("DELETE")
-}
-
-// Run the app on it's router
-func (a *App) Run(host string) {
-	log.Println("Starting server", host)
-	log.Fatal(http.ListenAndServe(host, a.Router))
 }
 
 type RequestHandlerFunction func(w http.ResponseWriter, r *http.Request)
