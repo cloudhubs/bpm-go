@@ -25,7 +25,7 @@ func (a *App) InitializeAndRun(host string) {
 
 // setRouters sets the all required routers
 func (a *App) setRouters() {
-	a.Post("/parse", a.handleRequest(handler.ListImports))
+	a.Post("/importContext", a.handleRequest(handler.GetImportContext))
 }
 
 // Get wraps the router for GET method

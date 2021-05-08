@@ -11,16 +11,56 @@ $ go run main.go
 
 Request:
 ```
-POST 127.0.0.1:8085/parse
+POST 127.0.0.1:8085/importContext
 {
-  "filePath": "/Users/das/Downloads/main.go"
+    "path": "/Users/das/Baylor/RA/rad-go"
 }
 ```
 
 Response:
-```
+```JSON
 {
-  "filePath": "/Users/das/Downloads/main.go"
+    "rootPath": "/Users/das/Baylor/RA/rad-go",
+    "imports": [
+        {
+            "path": "/Users/das/Baylor/RA/rad-go/app/app.go",
+            "packages": [
+                "log",
+                "net/http",
+                "rad-go/app/handler",
+                "github.com/gorilla/mux"
+            ]
+        },
+        {
+            "path": "/Users/das/Baylor/RA/rad-go/app/handler/common.go",
+            "packages": [
+                "encoding/json",
+                "net/http"
+            ]
+        },
+        {
+            "path": "/Users/das/Baylor/RA/rad-go/app/handler/parser.go",
+            "packages": [
+                "encoding/json",
+                "go/parser",
+                "go/token",
+                "net/http",
+                "os",
+                "path/filepath",
+                "rad-go/app/model"
+            ]
+        },
+        {
+            "path": "/Users/das/Baylor/RA/rad-go/app/model/model.go",
+            "packages": null
+        },
+        {
+            "path": "/Users/das/Baylor/RA/rad-go/main.go",
+            "packages": [
+                "rad-go/app"
+            ]
+        }
+    ]
 }
 ```
 
