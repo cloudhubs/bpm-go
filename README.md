@@ -1,70 +1,77 @@
-# RAD GO
+# BPM GO
 
-REST API Discovery for Go applications.
+Business Process Modeling for Go applications.
 
 ## Build and run
 
 ```
-$ goimports -l -w ./
+$ go mod tidy && goimports -l -w ./
 $ go run main.go
 ```
 
 Request:
 ```
-POST 127.0.0.1:8085/importContext
+POST 127.0.0.1:8085/imports
 {
-    "path": "/Users/das/Baylor/RA/rad-go"
+    "path": "/Users/das/Baylor/RA/bpm-go"
 }
 ```
 
 Response:
 ```JSON
 {
-    "rootPath": "/Users/das/Baylor/RA/rad-go",
-    "imports": [
-        {
-            "path": "/Users/das/Baylor/RA/rad-go/app/app.go",
-            "packages": [
-                "log",
-                "net/http",
-                "rad-go/app/handler",
-                "github.com/gorilla/mux"
-            ]
-        },
-        {
-            "path": "/Users/das/Baylor/RA/rad-go/app/handler/common.go",
-            "packages": [
-                "encoding/json",
-                "net/http"
-            ]
-        },
-        {
-            "path": "/Users/das/Baylor/RA/rad-go/app/handler/parser.go",
-            "packages": [
-                "encoding/json",
-                "go/parser",
-                "go/token",
-                "net/http",
-                "os",
-                "path/filepath",
-                "rad-go/app/model"
-            ]
-        },
-        {
-            "path": "/Users/das/Baylor/RA/rad-go/app/model/model.go",
-            "packages": null
-        },
-        {
-            "path": "/Users/das/Baylor/RA/rad-go/main.go",
-            "packages": [
-                "rad-go/app"
-            ]
-        }
-    ]
+  "rootPath": "/Users/das/Baylor/RA/bpm-go",
+  "imports": [
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/api/common.go",
+      "packages": [
+        "encoding/json",
+        "log",
+        "net/http"
+      ]
+    },
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/api/handler.go",
+      "packages": [
+        "bpm-go/lib",
+        "encoding/json",
+        "net/http"
+      ]
+    },
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/api/server.go",
+      "packages": [
+        "fmt",
+        "log",
+        "net/http",
+        "github.com/gorilla/mux"
+      ]
+    },
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/lib/helper.go",
+      "packages": [
+        "os",
+        "path/filepath"
+      ]
+    },
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/lib/model.go",
+      "packages": null
+    },
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/lib/process.go",
+      "packages": [
+        "go/parser",
+        "go/token"
+      ]
+    },
+    {
+      "path": "/Users/das/Baylor/RA/bpm-go/main.go",
+      "packages": [
+        "bpm-go/api"
+      ]
+    }
+  ]
 }
 ```
 
-## Authors
-
-- [Dipta Das](https://github.com/diptadas)
-- [Maruf Tuhin](https://github.com/the-redback)

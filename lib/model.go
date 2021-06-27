@@ -1,4 +1,4 @@
-package model
+package lib
 
 type ParseRequest struct {
 	Path string `json:"path"`

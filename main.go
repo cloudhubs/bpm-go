@@ -1,10 +1,13 @@
 package main
 
 import (
-	"rad-go/app"
+	"bpm-go/api"
 )
 
 func main() {
-	radApp := &app.App{}
-	radApp.InitializeAndRun(":8085")
+	server := &api.Server{
+		Port: 8085,
+	}
+
+	server.InitializeAndRun()
 }
