@@ -25,7 +25,7 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 
 	for i, fnNode := range fnNodes {
 		fnCalls := funcCallsInFunc(fnNode)
-		fnNodes[i].ChildNodes = getChildNodes(fnCalls, fnNodes)
+		fnNodes[i].ChildNodeIDs = getChildNodeIDs(fnCalls, fnNodes)
 	}
 
 	return fnNodes, nil
@@ -55,12 +55,20 @@ func getAsts(path string) ([]AstFileWrapper, error) {
 	return asts, nil
 }
 
+var fnNodeID = 0
+
+func getNextID() int {
+	fnNodeID++
+	return fnNodeID
+}
+
 func funcDeclarationsInAst(astWrapper AstFileWrapper) []FunctionNode {
 	var fnNodes []FunctionNode
 
 	for _, f := range astWrapper.astFile.Decls {
 		if fn, ok := f.(*ast.FuncDecl); ok {
 			fnNodes = append(fnNodes, FunctionNode{
+				ID:       getNextID(),
 				Name:     fn.Name.Name,
 				Package:  astWrapper.astFile.Name.Name,
 				FilePath: astWrapper.filePath,
@@ -110,18 +118,18 @@ func (v *FnCallVisitor) Visit(node ast.Node) (w ast.Visitor) {
 	return v
 }
 
-func getChildNodes(fnCalls []string, fnNodes []FunctionNode) []FunctionNode {
-	var childNodes []FunctionNode
+func getChildNodeIDs(fnCalls []string, fnNodes []FunctionNode) []int {
+	var childNodeIDs []int
 
 	for _, fnCall := range fnCalls {
 		for _, fnNode := range fnNodes {
 			// TODO: match package
 			if fnCall == fnNode.Name {
-				childNodes = append(childNodes, fnNode)
+				childNodeIDs = append(childNodeIDs, fnNode.ID)
 				break
 			}
 		}
 	}
 
-	return childNodes
+	return childNodeIDs
 }

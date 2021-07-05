@@ -22,11 +22,12 @@ type FunctionCallGraph struct {
 }
 
 type FunctionNode struct {
-	Name       string         `json:"name"`
-	Package    string         `json:"package"`
-	FilePath   string         `json:"filePath"`
-	Logs       []string       `json:"logs"`
-	ChildNodes []FunctionNode `json:"childNodes"`
+	ID           int      `json:"id"`
+	Name         string   `json:"name"`
+	Package      string   `json:"package"`
+	FilePath     string   `json:"filePath"`
+	Logs         []string `json:"logs"`
+	ChildNodeIDs []int    `json:"childNodeIDs"`
 
 	// for internal use
 	funcDecl *ast.FuncDecl
