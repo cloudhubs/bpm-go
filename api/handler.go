@@ -13,6 +13,7 @@ func hello(w http.ResponseWriter, r *http.Request) {
 func getFunctionNodes(w http.ResponseWriter, r *http.Request) {
 	request := lib.ParseRequest{}
 
+
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&request); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())

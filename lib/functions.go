@@ -5,7 +5,6 @@ import (
 	"go/parser"
 	"go/token"
 )
-
 type AstFileWrapper struct {
 	filePath string
 	astFile  *ast.File
@@ -13,6 +12,7 @@ type AstFileWrapper struct {
 
 func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	asts, err := getAsts(request.Path)
+
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +35,7 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 func getAsts(path string) ([]AstFileWrapper, error) {
 	// list all go file
 	sources, err := WalkMatch(path, "*.go")
+	//fmt.Println(sources)
 	if err != nil {
 		return nil, err
 	}
