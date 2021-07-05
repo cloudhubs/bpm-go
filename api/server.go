@@ -20,6 +20,7 @@ func (s *Server) InitializeAndRun() {
 	s.router = mux.NewRouter()
 	s.route("/hello", http.MethodGet, hello)
 	s.route("/imports", http.MethodPost, getImports)
+	s.route("/functions", http.MethodPost, getFunctionNodes)
 
 	// start the server
 	addr := fmt.Sprintf(":%v", s.Port)
