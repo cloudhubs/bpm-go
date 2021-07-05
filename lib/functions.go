@@ -42,7 +42,7 @@ func getAsts(path string) ([]AstFileWrapper, error) {
 	// ast for each file
 	var asts []AstFileWrapper
 	for _, source := range sources {
-		astFile, err := parser.ParseFile(token.NewFileSet(), source, nil, parser.ParseComments)
+		astFile, err := parser.ParseFile(token.NewFileSet(), source, nil, 0)
 		if err != nil {
 			return nil, err
 		}
@@ -73,17 +73,41 @@ func funcDeclarationsInAst(astWrapper AstFileWrapper) []FunctionNode {
 }
 
 func funcCallsInFunc(function FunctionNode) []string {
-	var fnCalls []string
-	for _, stmt := range function.funcDecl.Body.List {
-		if exprStmt, ok := stmt.(*ast.ExprStmt); ok {
-			if call, ok := exprStmt.X.(*ast.CallExpr); ok {
-				if fun, ok := call.Fun.(*ast.SelectorExpr); ok {
-					fnCalls = append(fnCalls, fun.Sel.Name)
-				}
-			}
+	visitor := &FnCallVisitor{}
+	ast.Walk(visitor, function.funcDecl.Body)
+	return visitor.fnCalls
+
+	//var fnCalls []string
+	//for _, stmt := range function.funcDecl.Body.List {
+	//	if exprStmt, ok := stmt.(*ast.ExprStmt); ok {
+	//		if call, ok := exprStmt.X.(*ast.CallExpr); ok {
+	//			if fun, ok := call.Fun.(*ast.SelectorExpr); ok {
+	//				fnCalls = append(fnCalls, fun.Sel.Name)
+	//			}
+	//		}
+	//	}
+	//}
+	//return fnCalls
+
+}
+
+type FnCallVisitor struct {
+	fnCalls []string
+}
+
+func (v *FnCallVisitor) Visit(node ast.Node) (w ast.Visitor) {
+	// TODO: https://stackoverflow.com/questions/55377694/how-to-find-full-package-import-from-callexpr
+	switch node := node.(type) {
+	case *ast.CallExpr:
+		switch node := node.Fun.(type) {
+		case *ast.SelectorExpr:
+			v.fnCalls = append(v.fnCalls, node.Sel.Name)
+		case *ast.Ident:
+			v.fnCalls = append(v.fnCalls, node.Name)
 		}
 	}
-	return fnCalls
+
+	return v
 }
 
 func getChildNodes(fnCalls []string, fnNodes []FunctionNode) []FunctionNode {

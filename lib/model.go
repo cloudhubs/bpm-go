@@ -22,7 +22,7 @@ type FunctionCallGraph struct {
 }
 
 type FunctionNode struct {
-	Name       string         `json:"path"`
+	Name       string         `json:"name"`
 	Package    string         `json:"package"`
 	FilePath   string         `json:"filePath"`
 	Logs       []string       `json:"logs"`
