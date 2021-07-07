@@ -20,8 +20,10 @@ func getFunctionNodes(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer r.Body.Close()
+	//fmt.Println(request)
 
 	fnNodes, err := lib.GetFunctionNodes(request)
+
 	if err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 	} else {

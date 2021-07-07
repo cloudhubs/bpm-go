@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -10,7 +11,7 @@ type AstFileWrapper struct {
 	astFile  *ast.File
 }
 
-func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
+func  GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	asts, err := getAsts(request.Path)
 
 	if err != nil {
@@ -20,11 +21,17 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	var fnNodes []FunctionNode
 	for _, astWrapper := range asts {
 		fns := funcDeclarationsInAst(astWrapper)
+
+
 		fnNodes = append(fnNodes, fns...)
 	}
 
 	for i, fnNode := range fnNodes {
+		fmt.Println(fnNode)
+		fmt.Println("------------------")
 		fnCalls := funcCallsInFunc(fnNode)
+
+
 		fnNodes[i].ChildNodeIDs = getChildNodeIDs(fnCalls, fnNodes)
 	}
 
@@ -83,6 +90,12 @@ func funcDeclarationsInAst(astWrapper AstFileWrapper) []FunctionNode {
 
 func funcCallsInFunc(function FunctionNode) []string {
 	visitor := &FnCallVisitor{}
+	visitor1 :=  &FnCallExpr{}
+	ast.Walk(visitor1, function.funcDecl.Body)
+	for _, f:= range visitor1.fnCallExpr{
+		fmt.Println(f)
+	}
+
 	ast.Walk(visitor, function.funcDecl.Body)
 	return visitor.fnCalls
 
@@ -102,6 +115,26 @@ func funcCallsInFunc(function FunctionNode) []string {
 
 type FnCallVisitor struct {
 	fnCalls []string
+}
+
+type FnCallExpr struct {
+	fnCallExpr [] string
+}
+
+func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
+	switch node := node.(type) {
+	case *ast.CallExpr:
+		fmt.Println(node.Fun)
+		switch node := node.Fun.(type) {
+
+		//case *ast.SelectorExpr:
+			//v.fnCallExpr = append(v.fnCallExpr, node.Sel.Name)
+		case *ast.Ident:
+			v.fnCallExpr = append(v.fnCallExpr, node.String())
+		}
+	}
+
+	return v
 }
 
 func (v *FnCallVisitor) Visit(node ast.Node) (w ast.Visitor) {
