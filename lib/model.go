@@ -23,7 +23,7 @@ type FunctionCallGraph struct {
 
 type Log struct {
 	ID          int        `json:"id"`
-	LineNumber  int        `json:"line"`
+	Type        string     `json:"type"`
 	LogMsg      string     `json:"log_msg"`
 }
 

@@ -6,12 +6,13 @@ import (
 	"go/parser"
 	"go/token"
 )
+
 type AstFileWrapper struct {
 	filePath string
 	astFile  *ast.File
 }
 
-func  GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
+func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	asts, err := getAsts(request.Path)
 
 	if err != nil {
@@ -22,7 +23,6 @@ func  GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	for _, astWrapper := range asts {
 		fns := funcDeclarationsInAst(astWrapper)
 
-
 		fnNodes = append(fnNodes, fns...)
 	}
 
@@ -30,7 +30,6 @@ func  GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 		fmt.Println(fnNode)
 		fmt.Println("------------------")
 		fnCalls := funcCallsInFunc(fnNode)
-
 
 		fnNodes[i].ChildNodeIDs = getChildNodeIDs(fnCalls, fnNodes)
 	}
@@ -90,10 +89,10 @@ func funcDeclarationsInAst(astWrapper AstFileWrapper) []FunctionNode {
 
 func funcCallsInFunc(function FunctionNode) []string {
 	visitor := &FnCallVisitor{}
-	visitor1 :=  &FnCallExpr{}
+	visitor1 := &FnCallExpr{}
 	ast.Walk(visitor1, function.funcDecl.Body)
-	for _, f:= range visitor1.fnCallExpr{
-		fmt.Println(f)
+	for i, _ := range visitor1.fnCallExpr {
+		i = i + 1
 	}
 
 	ast.Walk(visitor, function.funcDecl.Body)
@@ -118,19 +117,37 @@ type FnCallVisitor struct {
 }
 
 type FnCallExpr struct {
-	fnCallExpr [] string
+	fnCallExpr []string
 }
 
 func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
 	switch node := node.(type) {
 	case *ast.CallExpr:
-		fmt.Println(node.Fun)
-		switch node := node.Fun.(type) {
 
-		//case *ast.SelectorExpr:
-			//v.fnCallExpr = append(v.fnCallExpr, node.Sel.Name)
-		case *ast.Ident:
-			v.fnCallExpr = append(v.fnCallExpr, node.String())
+		switch nodeFn := node.Fun.(type) {
+		case *ast.SelectorExpr:
+			if pkgID, ok := nodeFn.X.(*ast.Ident); ok {
+				if pkgID.String() == "log" {
+					fmt.Println(pkgID)
+					if node.Args !=nil {
+						if basicLit, ok := node.Args[0].(*ast.BasicLit); ok {
+							msg := basicLit.Value
+							if msg != "" {
+								fmt.Println("log message", basicLit.Value)
+							}
+						}
+					}
+				}
+			}
+
+
+
+
+			/*if basicLit, ok := nodeFn.X.(*ast.CallExpr).Args[0].(*ast.BasicLit); ok {
+				fmt.Println("log message", basicLit.Value)
+			}*/
+
+			v.fnCallExpr = append(v.fnCallExpr, nodeFn.Sel.Name)
 		}
 	}
 
