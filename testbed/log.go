@@ -6,5 +6,6 @@ import (
 
 func showLog() {
 	notify := false
-	log.Info().Bool("resolution", notify).Msg("Should notify user")
+	log.Info().Bool("resolution", notify).Msg("Should notify user") // zero log
+	log.Print("hello")                                              // default go style log
 }
