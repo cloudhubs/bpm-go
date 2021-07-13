@@ -121,7 +121,10 @@ type FnCallExpr struct {
 }
 
 func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
-	parseZeroLog(node)
+	log := parseZeroLog(node)
+	if log != nil {
+		fmt.Println(log)
+	}
 	return v
 }
 
@@ -157,29 +160,12 @@ func parseZeroLog(node ast.Node) *Log {
 		}
 	}
 
-	return nil
-}
-
-func parseGoLog(node ast.Node) *Log {
-	switch node := node.(type) {
-	case *ast.CallExpr:
-		switch nodeFn := node.Fun.(type) {
-		case *ast.SelectorExpr:
-			if pkgID, ok := nodeFn.X.(*ast.Ident); ok {
-				if pkgID.String() == "log" {
-					if node.Args != nil {
-						if basicLit, ok := node.Args[0].(*ast.BasicLit); ok {
-							msg := basicLit.Value
-							if msg != "" {
-								fmt.Println("go log message:", basicLit.Value)
-								return &Log{
-									LogMsg: msg,
-								}
-							}
-						}
-					}
-				}
-			}
+	// default go log format
+	if len(stmt) == 3 && stmt[0] == "log" {
+		fmt.Println("go log:", stmt)
+		return &Log{
+			Type:   stmt[1], // Print, Fatal
+			LogMsg: stmt[2],
 		}
 	}
 
