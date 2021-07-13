@@ -121,37 +121,133 @@ type FnCallExpr struct {
 }
 
 func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
-	switch node := node.(type) {
-	case *ast.CallExpr:
+	parseZeroLog(node)
+	return v
 
-		switch nodeFn := node.Fun.(type) {
-		case *ast.SelectorExpr:
-			if pkgID, ok := nodeFn.X.(*ast.Ident); ok {
-				if pkgID.String() == "log" {
-					fmt.Println(pkgID)
-					if node.Args !=nil {
-						if basicLit, ok := node.Args[0].(*ast.BasicLit); ok {
-							msg := basicLit.Value
-							if msg != "" {
-								fmt.Println("log message", basicLit.Value)
-							}
-						}
-					}
-				}
-			}
-
-
-
-
-			/*if basicLit, ok := nodeFn.X.(*ast.CallExpr).Args[0].(*ast.BasicLit); ok {
-				fmt.Println("log message", basicLit.Value)
-			}*/
-
-			v.fnCallExpr = append(v.fnCallExpr, nodeFn.Sel.Name)
-		}
-	}
+	//switch node := node.(type) {
+	//case *ast.CallExpr:
+	//	switch nodeFn := node.Fun.(type) {
+	//	case *ast.SelectorExpr:
+	//		if pkgID, ok := nodeFn.X.(*ast.Ident); ok {
+	//			if pkgID.String() == "log" {
+	//				fmt.Println(pkgID)
+	//				if node.Args != nil {
+	//					if basicLit, ok := node.Args[0].(*ast.BasicLit); ok {
+	//						msg := basicLit.Value
+	//						if msg != "" {
+	//							fmt.Println("log message", basicLit.Value)
+	//						}
+	//					}
+	//				}
+	//			}
+	//		}
+	//
+	//		/*if basicLit, ok := nodeFn.X.(*ast.CallExpr).Args[0].(*ast.BasicLit); ok {
+	//			fmt.Println("log message", basicLit.Value)
+	//		}*/
+	//
+	//		v.fnCallExpr = append(v.fnCallExpr, nodeFn.Sel.Name)
+	//	}
+	//}
 
 	return v
+}
+
+func parseZeroLogRec(node interface{}) []string {
+	if n1, ok := node.(*ast.CallExpr); ok {
+		argsVal := ""
+		for _, x := range n1.Args {
+			if xv, ok := x.(*ast.BasicLit); ok {
+				argsVal += " " + xv.Value
+			} else if xv, ok := x.(*ast.Ident); ok {
+				argsVal += " " + xv.String()
+			}
+		}
+		return append(parseZeroLogRec(n1.Fun), argsVal)
+	} else if n2, ok := node.(*ast.SelectorExpr); ok {
+		return append(parseZeroLogRec(n2.X), n2.Sel.String())
+	} else if n3, ok := node.(*ast.Ident); ok {
+		return []string{n3.String()}
+	} else {
+		return nil
+	}
+}
+
+func parseZeroLog(node ast.Node) string {
+	//n1, ok := node.(*ast.CallExpr)
+	//if !ok {
+	//	return ""
+	//}
+	//n2, ok := n1.Fun.(*ast.SelectorExpr)
+	//if !ok {
+	//	return ""
+	//}
+	//n3, ok := n2.X.(*ast.CallExpr)
+	//if !ok {
+	//	return ""
+	//}
+	//n4, ok := n3.Fun.(*ast.SelectorExpr)
+	//if !ok {
+	//	return ""
+	//}
+	//n5, ok := n4.X.(*ast.CallExpr)
+	//if !ok {
+	//	return ""
+	//}
+	//n6, ok := n5.Fun.(*ast.SelectorExpr)
+	//if !ok {
+	//	return ""
+	//}
+	//n7, ok := n6.X.(*ast.Ident)
+	//if !ok {
+	//	return ""
+	//}
+	//
+	//n7Val := n7.String()
+	//if n7Val != "log" {
+	//	return ""
+	//}
+	//n6SelVal := n6.Sel.String()
+	//if n6SelVal != "Info" {
+	//	return ""
+	//}
+	//n4SelVal := n4.Sel.String()
+	//if n4SelVal != "Bool" {
+	//	return ""
+	//}
+	//n2SelVal := n2.Sel.String()
+	//if n2SelVal != "Msg" {
+	//	return ""
+	//}
+	//
+	//n3Args := n3.Args
+	//n3ArgsVal := ""
+	//for _, x := range n3Args {
+	//	if xv, ok := x.(*ast.BasicLit); ok {
+	//		n3ArgsVal += " " + xv.Value
+	//	} else if xv, ok := x.(*ast.Ident); ok {
+	//		n3ArgsVal += " " + xv.String()
+	//	}
+	//}
+	//
+	//n1Args := n1.Args
+	//n1ArgsVal := ""
+	//for _, x := range n1Args {
+	//	if xv, ok := x.(*ast.BasicLit); ok {
+	//		n1ArgsVal += " " + xv.Value
+	//	} else if xv, ok := x.(*ast.Ident); ok {
+	//		n1ArgsVal += " " + xv.String()
+	//	}
+	//}
+	//
+	//fmt.Println(n7Val, n6SelVal, n4SelVal, n3ArgsVal, n2SelVal, n1ArgsVal)
+
+	stmt := parseZeroLogRec(node)
+	if len(stmt) == 7 && stmt[0] == "log" && stmt[5] == "Msg" {
+		fmt.Println(stmt)
+	}
+
+	return ""
 }
 
 func (v *FnCallVisitor) Visit(node ast.Node) (w ast.Visitor) {
