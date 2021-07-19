@@ -22,7 +22,6 @@ type FunctionCallGraph struct {
 }
 
 type Log struct {
-	ID          int        `json:"id"`
 	Type        string     `json:"type"`
 	LogMsg      string     `json:"log_msg"`
 }
@@ -32,7 +31,7 @@ type FunctionNode struct {
 	Name         string   `json:"name"`
 	Package      string   `json:"package"`
 	FilePath     string   `json:"filePath"`
-	Logs         []Log 	  `json:"logs"`
+	Logs         []*Log 	  `json:"logs"`
 	ChildNodeIDs []int    `json:"childNodeIDs"`
 
 	// for internal use

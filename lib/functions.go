@@ -29,9 +29,10 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	for i, fnNode := range fnNodes {
 		fmt.Println(fnNode)
 		fmt.Println("------------------")
-		fnCalls := funcCallsInFunc(fnNode)
+		fnCalls, log := funcCallsInFunc(fnNode)
 
 		fnNodes[i].ChildNodeIDs = getChildNodeIDs(fnCalls, fnNodes)
+		fnNodes[i].Logs = log
 	}
 
 	return fnNodes, nil
@@ -87,28 +88,16 @@ func funcDeclarationsInAst(astWrapper AstFileWrapper) []FunctionNode {
 	return fnNodes
 }
 
-func funcCallsInFunc(function FunctionNode) []string {
+func funcCallsInFunc(function FunctionNode) ([]string, []*Log) {
 	visitor := &FnCallVisitor{}
 	visitor1 := &FnCallExpr{}
 	ast.Walk(visitor1, function.funcDecl.Body)
-	for i, _ := range visitor1.fnCallExpr {
-		i = i + 1
-	}
+
 
 	ast.Walk(visitor, function.funcDecl.Body)
-	return visitor.fnCalls
+	return visitor.fnCalls, visitor1.fnCallExpr
 
-	//var fnCalls []string
-	//for _, stmt := range function.funcDecl.Body.List {
-	//	if exprStmt, ok := stmt.(*ast.ExprStmt); ok {
-	//		if call, ok := exprStmt.X.(*ast.CallExpr); ok {
-	//			if fun, ok := call.Fun.(*ast.SelectorExpr); ok {
-	//				fnCalls = append(fnCalls, fun.Sel.Name)
-	//			}
-	//		}
-	//	}
-	//}
-	//return fnCalls
+
 
 }
 
@@ -117,13 +106,14 @@ type FnCallVisitor struct {
 }
 
 type FnCallExpr struct {
-	fnCallExpr []string
+	fnCallExpr []*Log
 }
 
 func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
 	log := parseZeroLog(node)
-	if log != nil {
-		fmt.Println(log)
+	if log != nil && len(log.LogMsg)>0{
+		v.fnCallExpr = append(v.fnCallExpr, log)
+		//fmt.Println("log type = ",log.Type,"logmsg = ",log.LogMsg)
 	}
 	return v
 }
@@ -153,7 +143,7 @@ func parseZeroLog(node ast.Node) *Log {
 
 	// zero log format
 	if len(stmt) == 7 && stmt[0] == "log" && stmt[5] == "Msg" {
-		fmt.Println("zero log:", stmt)
+		//fmt.Println("zero log:", stmt)
 		return &Log{
 			Type:   stmt[1], // Info, Err, etc
 			LogMsg: stmt[6],
@@ -162,7 +152,7 @@ func parseZeroLog(node ast.Node) *Log {
 
 	// default go log format
 	if len(stmt) == 3 && stmt[0] == "log" {
-		fmt.Println("go log:", stmt)
+
 		return &Log{
 			Type:   stmt[1], // Print, Fatal
 			LogMsg: stmt[2],
