@@ -12,8 +12,6 @@ func hello(w http.ResponseWriter, r *http.Request) {
 
 func getFunctionNodes(w http.ResponseWriter, r *http.Request) {
 	request := lib.ParseRequest{}
-
-
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&request); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
@@ -33,7 +31,6 @@ func getFunctionNodes(w http.ResponseWriter, r *http.Request) {
 
 func getImports(w http.ResponseWriter, r *http.Request) {
 	request := lib.ParseRequest{}
-
 	decoder := json.NewDecoder(r.Body)
 	if err := decoder.Decode(&request); err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
@@ -46,5 +43,22 @@ func getImports(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, err.Error())
 	} else {
 		respondJSON(w, http.StatusOK, importContext)
+	}
+}
+
+func runSonarAnalysis(w http.ResponseWriter, r *http.Request) {
+	request := lib.ParseRequest{}
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&request); err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+	defer r.Body.Close()
+
+	resp, err := lib.RunSonarAnalysis(request.Path)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+	} else {
+		respondJSON(w, http.StatusOK, resp)
 	}
 }

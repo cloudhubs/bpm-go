@@ -21,6 +21,7 @@ func (s *Server) InitializeAndRun() {
 	s.route("/hello", http.MethodGet, hello)
 	s.route("/imports", http.MethodPost, getImports)
 	s.route("/functions", http.MethodPost, getFunctionNodes)
+	s.route("/sonar", http.MethodPost, runSonarAnalysis)
 
 	// start the server
 	addr := fmt.Sprintf(":%v", s.Port)
