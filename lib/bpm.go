@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -14,7 +13,6 @@ type AstFileWrapper struct {
 
 func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	asts, err := getAsts(request.Path)
-
 	if err != nil {
 		return nil, err
 	}
@@ -22,15 +20,11 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	var fnNodes []FunctionNode
 	for _, astWrapper := range asts {
 		fns := funcDeclarationsInAst(astWrapper)
-
 		fnNodes = append(fnNodes, fns...)
 	}
 
 	for i, fnNode := range fnNodes {
-		fmt.Println(fnNode)
-		fmt.Println("------------------")
-		fnCalls, log := funcCallsInFunc(fnNode)
-
+		fnCalls, log := funcCallsAndLogsInFunc(fnNode)
 		fnNodes[i].ChildNodeIDs = getChildNodeIDs(fnCalls, fnNodes)
 		fnNodes[i].Logs = log
 	}
@@ -42,7 +36,6 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 func getAsts(path string) ([]AstFileWrapper, error) {
 	// list all go file
 	sources, err := WalkMatch(path, "*.go")
-	//fmt.Println(sources)
 	if err != nil {
 		return nil, err
 	}
@@ -88,37 +81,31 @@ func funcDeclarationsInAst(astWrapper AstFileWrapper) []FunctionNode {
 	return fnNodes
 }
 
-func funcCallsInFunc(function FunctionNode) ([]string, []*Log) {
-	visitor := &FnCallVisitor{}
-	visitor1 := &FnCallExpr{}
-	ast.Walk(visitor1, function.funcDecl.Body)
-
-
-	ast.Walk(visitor, function.funcDecl.Body)
-	return visitor.fnCalls, visitor1.fnCallExpr
-
-
-
+func funcCallsAndLogsInFunc(function FunctionNode) ([]string, []*Log) {
+	fnVisitor := &FnCallVisitor{}
+	logVisitor := &LogExprVisitor{}
+	ast.Walk(logVisitor, function.funcDecl.Body)
+	ast.Walk(fnVisitor, function.funcDecl.Body)
+	return fnVisitor.fnCalls, logVisitor.logs
 }
 
 type FnCallVisitor struct {
 	fnCalls []string
 }
 
-type FnCallExpr struct {
-	fnCallExpr []*Log
+type LogExprVisitor struct {
+	logs []*Log
 }
 
-func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
-	log := parseZeroLog(node)
-	if log != nil && len(log.LogMsg)>0{
-		v.fnCallExpr = append(v.fnCallExpr, log)
-		//fmt.Println("log type = ",log.Type,"logmsg = ",log.LogMsg)
+func (v *LogExprVisitor) Visit(node ast.Node) (w ast.Visitor) {
+	log := parseLog(node)
+	if log != nil && len(log.LogMsg) > 0 {
+		v.logs = append(v.logs, log)
 	}
 	return v
 }
 
-func parseZeroLogRec(node interface{}) []string {
+func parseLogRec(node interface{}) []string {
 	if n1, ok := node.(*ast.CallExpr); ok {
 		argsVal := ""
 		for _, x := range n1.Args {
@@ -128,9 +115,9 @@ func parseZeroLogRec(node interface{}) []string {
 				argsVal += " " + xv.String()
 			}
 		}
-		return append(parseZeroLogRec(n1.Fun), argsVal)
+		return append(parseLogRec(n1.Fun), argsVal)
 	} else if n2, ok := node.(*ast.SelectorExpr); ok {
-		return append(parseZeroLogRec(n2.X), n2.Sel.String())
+		return append(parseLogRec(n2.X), n2.Sel.String())
 	} else if n3, ok := node.(*ast.Ident); ok {
 		return []string{n3.String()}
 	} else {
@@ -138,12 +125,11 @@ func parseZeroLogRec(node interface{}) []string {
 	}
 }
 
-func parseZeroLog(node ast.Node) *Log {
-	stmt := parseZeroLogRec(node)
+func parseLog(node ast.Node) *Log {
+	stmt := parseLogRec(node)
 
 	// zero log format
 	if len(stmt) == 7 && stmt[0] == "log" && stmt[5] == "Msg" {
-		//fmt.Println("zero log:", stmt)
 		return &Log{
 			Type:   stmt[1], // Info, Err, etc
 			LogMsg: stmt[6],
