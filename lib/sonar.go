@@ -16,7 +16,6 @@ import (
 const SonarUrl = "http://localhost:9000"
 const SonarUser = "admin"
 const SonarPass = "admin"
-const ProjectKey = "bu-project"
 
 type SonarResult struct {
 	Total  int
@@ -39,77 +38,85 @@ type SonarIssue struct {
 }
 
 func init() {
-	go startSonar()
-	for ; isSonarUp() == false; {
-		time.Sleep(10 * time.Second)
+	if isSonarUp() == false {
+		if err := startSonar(); err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
-// docker run --rm -p 9000:9000 sonarqube:8.2-community
-func startSonar() {
-	cmd := exec.Command("docker", "run", "--rm",
+// run sonar in background
+// docker run -d -p 9000:9000 sonarqube:8.2-community
+func startSonar() error {
+	log.Println("starting sonar server")
+	cmd := exec.Command("docker", "run", "-d",
 		"-p=9000:9000",
 		"sonarqube:8.2-community",
 	)
-
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	err := cmd.Run()
-	if err != nil {
-		log.Println("run sonar error:", err)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("start sonar error, reason: %v", err)
 	}
+
+	log.Println("waiting for sonar server to start")
+	for isSonarUp() == false {
+		time.Sleep(10 * time.Second)
+	}
+
+	return nil
 }
 
 func isSonarUp() bool {
 	healthApi := SonarUrl + "/api/system/health"
 	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Get(healthApi)
 	if err != nil {
-		log.Println("Sonar health API error:", err)
+		log.Println("sonar health API error:", err)
 		return false
 	}
-	log.Println("Sonar health API response:", resp.String())
+	log.Println("sonar health API response:", resp.String())
 	return strings.Contains(resp.String(), "GREEN")
 }
 
-func deleteProject() error {
-	deleteApi := fmt.Sprintf("%s/api/projects/delete?project=%s", SonarUrl, ProjectKey)
+func deleteProject(projectKey string) error {
+	deleteApi := fmt.Sprintf("%s/api/projects/delete?project=%s", SonarUrl, projectKey)
 	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Post(deleteApi)
 	if err != nil {
 		return fmt.Errorf("sonar delete project API error, reason: %v", err)
 	}
-	log.Println("Sonar delete project API response:", resp.String())
+	log.Println("sonar delete project API response:", resp.String())
 	return nil
 }
 
-func runSonarScanner(sourcePath string) error {
-	// delete the project before running a new scan
-	err := deleteProject()
+func isProjectExists(projectKey string) (bool, error) {
+	searchApi := fmt.Sprintf("%s/api/projects/search?projects=%s", SonarUrl, projectKey)
+	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Get(searchApi)
 	if err != nil {
-		return err
+		return false, fmt.Errorf("sonar search project API error, reason: %v", err)
 	}
+	log.Println("sonar search project API response:", resp.String())
+	return strings.Contains(resp.String(), projectKey), nil
+}
 
+func runSonarScanner(sourcePath, projectKey string) error {
 	cmd := exec.Command("docker", "run", "--rm",
 		fmt.Sprintf("-v=%s:/usr/src", sourcePath),
 		"--network=host",
 		"sonarsource/sonar-scanner-cli",
-		"-D", fmt.Sprintf("sonar.projectKey=%s", ProjectKey),
+		"-D", fmt.Sprintf("sonar.projectKey=%s", projectKey),
 	)
 
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err = cmd.Run()
-	if err != nil {
+	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("sonar run scanner error, reason: %v", err)
 	}
 
 	return nil
 }
 
-func getGolangProjectIssues() (SonarResult, error) {
+func getGolangProjectIssues(projectKey string) (SonarResult, error) {
 	// TODO: loop through pages
-	issuesApi := fmt.Sprintf("%s/api/issues/search?lcomponentKeys=%s&languages=go&ps=500&p=1", SonarUrl, ProjectKey)
+	issuesApi := fmt.Sprintf("%s/api/issues/search?lcomponentKeys=%s&languages=go&ps=500&p=1", SonarUrl, projectKey)
 	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Post(issuesApi)
 	if err != nil {
 		return SonarResult{}, fmt.Errorf("sonar search issues API error, reason: %v", err)
@@ -125,21 +132,25 @@ func getGolangProjectIssues() (SonarResult, error) {
 	return result, nil
 }
 
-func RunSonarAnalysis(sourcePath string) (SonarResult, error) {
-	err := runSonarScanner(sourcePath)
-	if err != nil {
+func RunSonarAnalysis(request ParseRequest) (SonarResult, error) {
+	// scan if project do not exists
+	if ok, err := isProjectExists(request.ProjectKey); err != nil {
 		return SonarResult{}, err
+	} else if !ok {
+		if err = runSonarScanner(request.Path, request.ProjectKey); err != nil {
+			return SonarResult{}, err
+		}
 	}
 
-	result, err := getGolangProjectIssues()
+	result, err := getGolangProjectIssues(request.ProjectKey)
 	if err != nil {
 		return SonarResult{}, err
 	}
 
 	for i, issue := range result.Issues {
 		// resolve file path
-		fileName := strings.TrimPrefix(issue.Component, ProjectKey+":")
-		path := filepath.Join(sourcePath, fileName)
+		fileName := strings.TrimPrefix(issue.Component, request.ProjectKey+":")
+		path := filepath.Join(request.Path, fileName)
 
 		// resolve function name
 		fn, err := findFunctionName(path, issue.Line)

@@ -55,7 +55,7 @@ func runSonarAnalysis(w http.ResponseWriter, r *http.Request) {
 	}
 	defer r.Body.Close()
 
-	resp, err := lib.RunSonarAnalysis(request.Path)
+	resp, err := lib.RunSonarAnalysis(request)
 	if err != nil {
 		respondError(w, http.StatusBadRequest, err.Error())
 	} else {
