@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
@@ -14,7 +13,6 @@ type AstFileWrapper struct {
 
 func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	asts, err := getAsts(request.Path)
-
 	if err != nil {
 		return nil, err
 	}
@@ -22,15 +20,11 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 	var fnNodes []FunctionNode
 	for _, astWrapper := range asts {
 		fns := funcDeclarationsInAst(astWrapper)
-
 		fnNodes = append(fnNodes, fns...)
 	}
 
 	for i, fnNode := range fnNodes {
-		fmt.Println(fnNode)
-		fmt.Println("------------------")
 		fnCalls, log := funcCallsInFunc(fnNode)
-
 		fnNodes[i].ChildNodeIDs = getChildNodeIDs(fnCalls, fnNodes)
 		fnNodes[i].Logs = log
 	}
@@ -42,7 +36,6 @@ func GetFunctionNodes(request ParseRequest) ([]FunctionNode, error) {
 func getAsts(path string) ([]AstFileWrapper, error) {
 	// list all go file
 	sources, err := WalkMatch(path, "*.go")
-	//fmt.Println(sources)
 	if err != nil {
 		return nil, err
 	}
@@ -93,11 +86,8 @@ func funcCallsInFunc(function FunctionNode) ([]string, []*Log) {
 	visitor1 := &FnCallExpr{}
 	ast.Walk(visitor1, function.funcDecl.Body)
 
-
 	ast.Walk(visitor, function.funcDecl.Body)
 	return visitor.fnCalls, visitor1.fnCallExpr
-
-
 
 }
 
@@ -111,9 +101,8 @@ type FnCallExpr struct {
 
 func (v *FnCallExpr) Visit(node ast.Node) (w ast.Visitor) {
 	log := parseZeroLog(node)
-	if log != nil && len(log.LogMsg)>0{
+	if log != nil && len(log.LogMsg) > 0 {
 		v.fnCallExpr = append(v.fnCallExpr, log)
-		//fmt.Println("log type = ",log.Type,"logmsg = ",log.LogMsg)
 	}
 	return v
 }
@@ -143,7 +132,6 @@ func parseZeroLog(node ast.Node) *Log {
 
 	// zero log format
 	if len(stmt) == 7 && stmt[0] == "log" && stmt[5] == "Msg" {
-		//fmt.Println("zero log:", stmt)
 		return &Log{
 			Type:   stmt[1], // Info, Err, etc
 			LogMsg: stmt[6],
