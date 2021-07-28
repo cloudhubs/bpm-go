@@ -19,9 +19,9 @@ func (s *Server) InitializeAndRun() {
 	// initialize and set routers
 	s.router = mux.NewRouter()
 	s.route("/hello", http.MethodGet, hello)
-	s.route("/imports", http.MethodPost, getImports)
-	s.route("/functions", http.MethodPost, getFunctionNodes)
+	s.route("/bpm", http.MethodPost, getFunctionNodes)
 	s.route("/sonar", http.MethodPost, runSonarAnalysis)
+	s.route("/analysis", http.MethodPost, runProjectAnalysis)
 
 	// start the server
 	addr := fmt.Sprintf(":%v", s.Port)

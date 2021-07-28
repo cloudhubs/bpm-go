@@ -4,38 +4,19 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"github.com/go-resty/resty/v2"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/go-resty/resty/v2"
 )
 
 const SonarUrl = "http://localhost:9000"
 const SonarUser = "admin"
 const SonarPass = "admin"
-
-type SonarResult struct {
-	Total  int
-	Issues []SonarIssue
-}
-
-type SonarIssue struct {
-	Component string
-	Line      int
-	Severity  string
-	Rule      string
-	Type      string
-	Message   string
-	Effort    string
-	Debt      string
-
-	// resolve separately
-	FilePath string
-	Function string
-}
 
 func init() {
 	if isSonarUp() == false {
@@ -65,6 +46,7 @@ func startSonar() error {
 	return nil
 }
 
+// http://localhost:9000/api/system/health
 func isSonarUp() bool {
 	healthApi := SonarUrl + "/api/system/health"
 	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Get(healthApi)
@@ -76,6 +58,7 @@ func isSonarUp() bool {
 	return strings.Contains(resp.String(), "GREEN")
 }
 
+// http://localhost:9000/api/projects/delete?project=ccx
 func deleteProject(projectKey string) error {
 	deleteApi := fmt.Sprintf("%s/api/projects/delete?project=%s", SonarUrl, projectKey)
 	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Post(deleteApi)
@@ -86,6 +69,7 @@ func deleteProject(projectKey string) error {
 	return nil
 }
 
+// http://localhost:9000/api/projects/search?projects=ccx
 func isProjectExists(projectKey string) (bool, error) {
 	searchApi := fmt.Sprintf("%s/api/projects/search?projects=%s", SonarUrl, projectKey)
 	resp, err := resty.New().SetBasicAuth(SonarUser, SonarPass).R().Get(searchApi)
@@ -114,6 +98,7 @@ func runSonarScanner(sourcePath, projectKey string) error {
 	return nil
 }
 
+// http://localhost:9000/api/issues/search?lcomponentKeys=ccx&languages=go&ps=500&p=1
 func getGolangProjectIssues(projectKey string) (SonarResult, error) {
 	// TODO: loop through pages
 	issuesApi := fmt.Sprintf("%s/api/issues/search?lcomponentKeys=%s&languages=go&ps=500&p=1", SonarUrl, projectKey)

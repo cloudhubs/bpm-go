@@ -7,16 +7,6 @@ type ParseRequest struct {
 	ProjectKey string `json:"projectKey"`
 }
 
-type ImportContext struct {
-	RootPath string          `json:"rootPath"`
-	Imports  []ImportForFile `json:"imports"`
-}
-
-type ImportForFile struct {
-	Path     string   `json:"path"`
-	Packages []string `json:"packages"`
-}
-
 type FunctionCallGraph struct {
 	RootPath string         `json:"rootPath"`
 	Roots    []FunctionNode `json:"roots"`
@@ -37,4 +27,24 @@ type FunctionNode struct {
 
 	// for internal use
 	funcDecl *ast.FuncDecl
+}
+
+type SonarResult struct {
+	Total  int
+	Issues []SonarIssue
+}
+
+type SonarIssue struct {
+	Component string
+	Line      int
+	Severity  string
+	Rule      string
+	Type      string
+	Message   string
+	Effort    string
+	Debt      string
+
+	// resolve separately
+	FilePath string
+	Function string
 }
