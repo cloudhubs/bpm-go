@@ -133,6 +133,10 @@ func getGolangProjectIssues(projectKey string) (SonarResult, error) {
 }
 
 func RunSonarAnalysis(request ParseRequest) (SonarResult, error) {
+	if request.Path == "" || request.ProjectKey == "" {
+		return SonarResult{}, fmt.Errorf("missing path or project key")
+	}
+
 	// scan if project do not exists
 	if ok, err := isProjectExists(request.ProjectKey); err != nil {
 		return SonarResult{}, err
