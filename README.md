@@ -1,6 +1,10 @@
 # BPM GO
 
-Business Process Modeling for Go applications.
+Technical Debt analysis for Go applications.
+
+- Business Process Modeling (BPM)
+- SonarQube analysis
+- Log processing
 
 ## Build and Run
 
@@ -11,20 +15,31 @@ $ go run main.go
 
 ## API Usage
 
-### Imports
+### Project Analysis
 
-```
-POST 127.0.0.1:8085/imports
+```shell
+POST 127.0.0.1:8085/analysis
 {
-    "path": "/Users/das/Baylor/RA/bpm-go"
+    "path": "/Users/das/Baylor/RA/ccx-notification-service",
+    "projectKey": "ccx"
 }
 ```
 
 ### Function Calls
 
-```
-POST 127.0.0.1:8085/functions
+```shell
+POST 127.0.0.1:8085/bpm
 {
-    "path": "/Users/das/Baylor/RA/bpm-go"
+    "path": "/Users/das/Baylor/RA/ccx-notification-service"
+}
+```
+
+### Sonar Analysis
+
+```shell
+POST 127.0.0.1:8085/sonar
+{
+    "path": "/Users/das/Baylor/RA/ccx-notification-service",
+    "projectKey": "ccx"
 }
 ```
