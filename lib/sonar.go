@@ -1,12 +1,14 @@
 package lib
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/go-resty/resty/v2"
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -30,10 +32,13 @@ type SonarIssue struct {
 	Message   string
 	Effort    string
 	Debt      string
+
+	// resolve separately
+	FilePath string
+	Function string
 }
 
 func init() {
-	// TODO: run Sonar server separately?
 	go startSonar()
 	for ; isSonarUp() == false; {
 		time.Sleep(10 * time.Second)
@@ -125,5 +130,51 @@ func RunSonarAnalysis(sourcePath string) (SonarResult, error) {
 	if err != nil {
 		return SonarResult{}, err
 	}
-	return getGolangProjectIssues()
+
+	result, err := getGolangProjectIssues()
+	if err != nil {
+		return SonarResult{}, err
+	}
+
+	for i, issue := range result.Issues {
+		// resolve file path
+		fileName := strings.TrimPrefix(issue.Component, ProjectKey+":")
+		path := filepath.Join(sourcePath, fileName)
+
+		// resolve function name
+		fn, err := findFunctionName(path, issue.Line)
+		if err != nil {
+			return SonarResult{}, err
+		}
+
+		result.Issues[i].FilePath = path
+		result.Issues[i].Function = fn
+	}
+
+	return result, nil
+}
+
+func findFunctionName(path string, line int) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	curFunc := "global"
+
+	for curLine, scanner := 0, bufio.NewScanner(file); scanner.Scan(); curLine++ {
+		text := strings.TrimLeft(scanner.Text(), " ")
+		if strings.HasPrefix(text, "func") {
+			text = strings.TrimPrefix(text, "func")
+			text = strings.TrimLeft(text, " ")
+			curFunc = strings.SplitN(text, "(", 2)[0]
+			curFunc = strings.Trim(curFunc, " ")
+		}
+		if curLine == line {
+			break
+		}
+	}
+
+	return curFunc, nil
 }
