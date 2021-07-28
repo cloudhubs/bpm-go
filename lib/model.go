@@ -25,6 +25,8 @@ type FunctionNode struct {
 	Logs         []*Log `json:"logs"`
 	ChildNodeIDs []int  `json:"childNodeIDs"`
 
+	Issues []SonarIssue `json:"issues"`
+
 	// for internal use
 	funcDecl *ast.FuncDecl
 }
